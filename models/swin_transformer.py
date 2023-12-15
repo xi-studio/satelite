@@ -3,11 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 import numpy as np
-from model_helper import DropPath, trunc_normal_
+from models.model_helper import DropPath, trunc_normal_
 
 from functools import reduce, lru_cache
 from operator import mul
 from einops import rearrange
+import warnings
+warnings.filterwarnings("ignore")
 
 
 class Mlp(nn.Module):
@@ -478,8 +480,8 @@ class SwinTransformer3D(nn.Module):
     def __init__(self,
                  pretrained=None,
                  patch_size=(4,4,4),
-                 in_chans=5,
-                 embed_dim=96*2,
+                 in_chans=3,
+                 embed_dim=96,
                  depths=[2, 2, 6, 2],
                  num_heads=[3, 6, 12, 24],
                  window_size=(2,7,7),
@@ -575,7 +577,6 @@ class SwinTransformer3D(nn.Module):
 
     def forward(self, x):
         """Forward function."""
-        x = rearrange(x, 'n (c d) h w -> n c d h w', c=5)
         x = self.patch_embed(x)
 
         x = self.pos_drop(x)
@@ -584,8 +585,8 @@ class SwinTransformer3D(nn.Module):
             x = layer(x.contiguous())
 
         x = rearrange(x, 'n c d h w -> n d h w c')
-        #x = self.norm(x)
-        #x = rearrange(x, 'n d h w c -> n c d h w')
+        x = self.norm(x)
+        x = rearrange(x, 'n d h w c -> n c d h w')
 
         return x
 
@@ -596,8 +597,11 @@ class SwinTransformer3D(nn.Module):
 
 
 if __name__ == '__main__':
-    model = SwinTransformer3D() 
-    x = torch.rand((16,10,256,256)) # B, C, D, H, W
+    model = SwinTransformer3D(in_chans=3,
+                              embed_dim=96
+                              ) 
+    x = torch.rand((16, 15, 256, 256)) # B, C, D, H, W
+    x = rearrange(x, 'n (c d) h w -> n c d h w', c=3)
     print('input', x.shape)
     y = model(x)
     print('out', y.shape)
