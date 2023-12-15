@@ -1,0 +1,8 @@
+lightning
+yacs
+timm
+matplotlib
+tensorboard
+tqdm
+scikit-image
+
