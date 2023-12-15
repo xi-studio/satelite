@@ -15,10 +15,11 @@ from torchvision import transforms, utils
 from swin_model import SwModel
 from dataset import Sate
 
-def main():
-    filenames = np.arange(100)
 
-    dataset = Sate(filenames)
+def main():
+    filenames = np.load('data/meta/train_pangu_24.npy')
+
+    dataset = Sate(filenames, flag=False)
     n_val = int(len(dataset) * 0.1)
     n_train = len(dataset) - n_val
     train_ds, val_ds = random_split(dataset, [n_train, n_val])
@@ -27,7 +28,18 @@ def main():
 
     config = {'lr': 0.05}
     model = SwModel(config)
-    trainer = pl.Trainer(accelerator='cpu', devices=1, max_epochs=2, enable_checkpointing=True)
+
+    logger = pl.loggers.TensorBoardLogger(
+                save_dir='.',
+                version='sat_1215',
+                name='lightning_logs'
+            )
+    trainer = pl.Trainer(accelerator='gpu', 
+                         devices=1, 
+                         max_epochs=2, 
+                         enable_checkpointing=True,
+                         logger=logger
+                         )
     
     trainer.fit(model, train_loader, val_loader)
 
